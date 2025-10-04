@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feedback_analyses: {
+        Row: {
+          created_at: string
+          id: string
+          raw_feedback: string
+          total_items: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          raw_feedback: string
+          total_items?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          raw_feedback?: string
+          total_items?: number
+        }
+        Relationships: []
+      }
+      feedback_items: {
+        Row: {
+          analysis_id: string | null
+          category: string
+          created_at: string
+          id: string
+          impact: number
+          priority_score: number
+          sentiment: string
+          summary: string
+          title: string
+          urgency: number
+        }
+        Insert: {
+          analysis_id?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          impact: number
+          priority_score: number
+          sentiment: string
+          summary: string
+          title: string
+          urgency: number
+        }
+        Update: {
+          analysis_id?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          impact?: number
+          priority_score?: number
+          sentiment?: string
+          summary?: string
+          title?: string
+          urgency?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_items_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string
+          critical_threshold: number
+          email: string
+          enable_critical_alerts: boolean
+          enable_weekly_reports: boolean
+          id: string
+          slack_webhook_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          critical_threshold?: number
+          email: string
+          enable_critical_alerts?: boolean
+          enable_weekly_reports?: boolean
+          id?: string
+          slack_webhook_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          critical_threshold?: number
+          email?: string
+          enable_critical_alerts?: boolean
+          enable_weekly_reports?: boolean
+          id?: string
+          slack_webhook_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
