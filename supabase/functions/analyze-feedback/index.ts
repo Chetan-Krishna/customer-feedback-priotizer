@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,10 @@ serve(async (req) => {
   try {
     const { feedbackText } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
@@ -122,6 +127,47 @@ Return a JSON array of feedback items.`
     itemsWithPriority.sort((a: any, b: any) => b.priorityScore - a.priorityScore);
 
     console.log(`Analyzed ${itemsWithPriority.length} feedback items`);
+
+    // Save analysis to database
+    const { data: analysisData, error: analysisError } = await supabase
+      .from('feedback_analyses')
+      .insert({
+        raw_feedback: feedbackText,
+        total_items: itemsWithPriority.length
+      })
+      .select()
+      .single();
+
+    if (analysisError) {
+      console.error('Error saving analysis:', analysisError);
+    } else {
+      // Save individual items
+      const itemsToInsert = itemsWithPriority.map((item: any) => ({
+        analysis_id: analysisData.id,
+        title: item.title,
+        category: item.category,
+        urgency: item.urgency,
+        impact: item.impact,
+        sentiment: item.sentiment,
+        summary: item.summary,
+        priority_score: item.priorityScore
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('feedback_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) {
+        console.error('Error saving items:', itemsError);
+      }
+
+      // Check for critical items and send notifications
+      const criticalItems = itemsWithPriority.filter((item: any) => item.priorityScore >= 14);
+      if (criticalItems.length > 0) {
+        console.log(`Found ${criticalItems.length} critical items`);
+        // Notification logic will be handled separately
+      }
+    }
 
     return new Response(
       JSON.stringify({ items: itemsWithPriority }),

@@ -4,9 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Sparkles, TrendingUp, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, TrendingUp, AlertCircle, BarChart3, Bell } from "lucide-react";
 import FeedbackMatrix from "@/components/FeedbackMatrix";
 import PriorityList from "@/components/PriorityList";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import NotificationSettings from "@/components/NotificationSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface FeedbackItem {
   id: string;
@@ -135,32 +138,52 @@ const Index = () => {
         </Card>
       </div>
 
-      {/* Results Section */}
-      {results.length > 0 && (
-        <div className="container mx-auto px-4 pb-16 space-y-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-2 mb-6">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-bold">Analysis Results</h2>
-            </div>
-            
-            <FeedbackMatrix items={results} />
-            <PriorityList items={results} />
-          </div>
-        </div>
-      )}
+      {/* Results & Analytics Section */}
+      <div className="container mx-auto px-4 pb-16 space-y-8">
+        <div className="max-w-6xl mx-auto">
+          <Tabs defaultValue={results.length > 0 ? "current" : "analytics"} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="current">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Current Analysis
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="notifications">
+                <Bell className="h-4 w-4 mr-2" />
+                Notifications
+              </TabsTrigger>
+            </TabsList>
 
-      {/* Empty State */}
-      {!analyzing && results.length === 0 && feedbackText && (
-        <div className="container mx-auto px-4 pb-16">
-          <Card className="max-w-2xl mx-auto p-12 text-center">
-            <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Click "Analyze Feedback" to see prioritized insights
-            </p>
-          </Card>
+            <TabsContent value="current" className="space-y-6 mt-6">
+              {results.length > 0 ? (
+                <>
+                  <FeedbackMatrix items={results} />
+                  <PriorityList items={results} />
+                </>
+              ) : (
+                <Card className="p-12 text-center">
+                  <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    No current analysis. Analyze feedback to see results here.
+                  </p>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="analytics" className="mt-6">
+              <AnalyticsDashboard />
+            </TabsContent>
+
+            <TabsContent value="notifications" className="mt-6">
+              <NotificationSettings />
+            </TabsContent>
+          </Tabs>
         </div>
-      )}
+      </div>
+
     </div>
   );
 };
