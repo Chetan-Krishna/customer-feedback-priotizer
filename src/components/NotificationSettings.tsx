@@ -24,13 +24,17 @@ const NotificationSettings = () => {
 
   const loadSettings = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('notification_settings')
         .select('*')
+        .eq('user_id', user.id)
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
 
       if (data) {
         setSettingsId(data.id);
@@ -57,7 +61,18 @@ const NotificationSettings = () => {
 
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Not authenticated",
+          description: "Please log in to save settings.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const settingsData = {
+        user_id: user.id,
         email,
         enable_weekly_reports: weeklyReports,
         enable_critical_alerts: criticalAlerts,

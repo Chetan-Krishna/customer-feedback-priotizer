@@ -12,12 +12,30 @@ serve(async (req) => {
   }
 
   try {
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { feedbackText } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Verify user
+    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
@@ -128,10 +146,11 @@ Return a JSON array of feedback items.`
 
     console.log(`Analyzed ${itemsWithPriority.length} feedback items`);
 
-    // Save analysis to database
+    // Save analysis to database with user_id
     const { data: analysisData, error: analysisError } = await supabase
       .from('feedback_analyses')
       .insert({
+        user_id: user.id,
         raw_feedback: feedbackText,
         total_items: itemsWithPriority.length
       })
@@ -141,8 +160,9 @@ Return a JSON array of feedback items.`
     if (analysisError) {
       console.error('Error saving analysis:', analysisError);
     } else {
-      // Save individual items
+      // Save individual items with user_id
       const itemsToInsert = itemsWithPriority.map((item: any) => ({
+        user_id: user.id,
         analysis_id: analysisData.id,
         title: item.title,
         category: item.category,

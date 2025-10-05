@@ -20,18 +20,21 @@ export type Database = {
           id: string
           raw_feedback: string
           total_items: number
+          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           raw_feedback: string
           total_items?: number
+          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           raw_feedback?: string
           total_items?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -47,6 +50,7 @@ export type Database = {
           summary: string
           title: string
           urgency: number
+          user_id: string
         }
         Insert: {
           analysis_id?: string | null
@@ -59,6 +63,7 @@ export type Database = {
           summary: string
           title: string
           urgency: number
+          user_id: string
         }
         Update: {
           analysis_id?: string | null
@@ -71,6 +76,7 @@ export type Database = {
           summary?: string
           title?: string
           urgency?: number
+          user_id?: string
         }
         Relationships: [
           {
@@ -92,6 +98,7 @@ export type Database = {
           id: string
           slack_webhook_url: string | null
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -102,6 +109,7 @@ export type Database = {
           id?: string
           slack_webhook_url?: string | null
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -112,6 +120,7 @@ export type Database = {
           id?: string
           slack_webhook_url?: string | null
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

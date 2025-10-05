@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Sparkles, TrendingUp, AlertCircle, BarChart3, Bell } from "lucide-react";
+import { Loader2, Sparkles, TrendingUp, AlertCircle, BarChart3, Bell, LogOut } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 import FeedbackMatrix from "@/components/FeedbackMatrix";
 import PriorityList from "@/components/PriorityList";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
@@ -23,12 +25,53 @@ interface FeedbackItem {
 }
 
 const Index = () => {
+  const [user, setUser] = useState<User | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<FeedbackItem[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check authentication
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
 
   const handleAnalyze = async () => {
+    if (!user) {
+      toast({
+        title: "Not authenticated",
+        description: "Please log in to analyze feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!feedbackText.trim()) {
       toast({
         title: "No feedback provided",
@@ -70,26 +113,38 @@ const Index = () => {
     }
   };
 
+  if (!user) {
+    return null; // Will redirect in useEffect
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-secondary/30 to-background">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent" />
         <div className="container mx-auto px-4 py-16 relative">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              AI-Powered Feedback Analysis
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <Sparkles className="h-4 w-4" />
+                AI-Powered Feedback Analysis
+              </div>
+              <Button variant="outline" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight">
-              Customer Feedback Prioritizer
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Transform thousands of feedback entries into actionable insights. 
-              Our AI categorizes by urgency and impact, so you know exactly what to build next.
-            </p>
+            <div className="text-center space-y-4">
+              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight">
+                Customer Feedback Prioritizer
+              </h1>
+              
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Transform thousands of feedback entries into actionable insights. 
+                Our AI categorizes by urgency and impact, so you know exactly what to build next.
+              </p>
+            </div>
           </div>
         </div>
       </div>
